@@ -1,4 +1,8 @@
 
+library(Matrix)
+library(data.table)
+library(tidyverse)
+
 path1 <- "/mnt/nfs_fineprint/tmp/gloria/v057new/parsed"
 path <- "/mnt/nfs_fineprint/tmp/gloria/v057new/MRIO"
 
@@ -44,5 +48,34 @@ for (year in years) {
 results <- rbindlist(results_all)
 results <- results %>% filter(value != 0)
 saveRDS(results, file = "./output/footprint-co2_excl_short_cycl_org_c.rds")
+rm(list = ls())
+gc()
+
+
+# comsumption categories
+y <- list()
+
+for (year in years) {
+  # loading data sets
+  Y <- readRDS(paste0(path, "/Y_", year, ".rds"))
+  
+  # multipliers
+  colnames(Y) <- paste0(fd$Region_acronyms, "_", fd$Final_demand_names)
+  yi <- colSums(Y)
+  results <- data.table(country = substr(names(yi),1,3),
+                        cc = substr(names(yi), 5,100),
+                        year = year,
+                        unit = "Thousand USD",
+                        value = yi)
+  
+  y[[as.character(year)]] <- results
+  
+  print(year)
+  
+}
+
+results <- rbindlist(y)
+results <- results %>% filter(value != 0)
+saveRDS(results, file = "./output/agg-country-consumption-categories.rds")
 rm(list = ls())
 gc()
